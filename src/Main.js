@@ -2,40 +2,39 @@ import Observer from './Observer'
 import Emitter from './Emitter'
 
 export default {
-
-  install (Vue, connection, opts = {}) {
+  install (app, connection, opts = {}) {
     if (!connection && !opts.connectManually) { throw new Error('[vue-native-socket] cannot locate connection') }
 
     let observer = null
 
     opts.$setInstance = (wsInstance) => {
-      Vue.prototype.$socket = wsInstance
+      app.config.globalProperties.$socket = wsInstance
     }
 
     if (opts.connectManually) {
-      Vue.prototype.$connect = (connectionUrl = connection, connectionOpts = opts) => {
+      app.config.globalProperties.$connect = (connectionUrl = connection, connectionOpts = opts) => {
         connectionOpts.$setInstance = opts.$setInstance
         observer = new Observer(connectionUrl, connectionOpts)
-        Vue.prototype.$socket = observer.WebSocket
+        app.config.globalProperties.$socket = observer.WebSocket
       }
 
-      Vue.prototype.$disconnect = () => {
+      app.config.globalProperties.$disconnect = () => {
         if (observer && observer.reconnection) {
           observer.reconnection = false
           clearTimeout(observer.reconnectTimeoutId)
         }
-        if (Vue.prototype.$socket) {
-          Vue.prototype.$socket.close()
-          delete Vue.prototype.$socket
+        if (app.config.globalProperties.$socket) {
+          app.config.globalProperties.$socket.close()
+          delete app.config.globalProperties.$socket
         }
       }
     } else {
       observer = new Observer(connection, opts)
-      Vue.prototype.$socket = observer.WebSocket
+      app.config.globalProperties.$socket = observer.WebSocket
     }
     const hasProxy = typeof Proxy !== 'undefined' && typeof Proxy === 'function' && /native code/.test(Proxy.toString())
 
-    Vue.mixin({
+    app.mixin({
       created () {
         const vm = this
         const sockets = this.$options.sockets
@@ -53,13 +52,27 @@ export default {
               return true
             }
           })
+          app.config.globalProperties.sockets = new Proxy({}, {
+            set (target, key, value) {
+              Emitter.addListener(key, value, vm)
+              target[key] = value
+              return true
+            },
+            deleteProperty (target, key) {
+              Emitter.removeListener(key, vm.$options.sockets[key], vm)
+              delete target.key
+              return true
+            }
+          })
           if (sockets) {
             Object.keys(sockets).forEach((key) => {
               this.$options.sockets[key] = sockets[key]
+              app.config.globalProperties.sockets[key] = sockets[key]
             })
           }
         } else {
           Object.seal(this.$options.sockets)
+          Object.seal(app.config.globalProperties.sockets)
 
           // if !hasProxy need addListener
           if (sockets) {
@@ -69,13 +82,14 @@ export default {
           }
         }
       },
-      beforeDestroy () {
+      beforeUnmount () {
         if (hasProxy) {
           const sockets = this.$options.sockets
 
           if (sockets) {
             Object.keys(sockets).forEach((key) => {
               delete this.$options.sockets[key]
+              delete app.config.globalProperties.sockets
             })
           }
         }

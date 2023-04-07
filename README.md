@@ -1,6 +1,6 @@
 # vue-native-websocket &middot; [![Build Status](https://travis-ci.org/nathantsoi/vue-native-websocket.svg?branch=master)](https://travis-ci.org/nathantsoi/vue-native-websocket) [![npm version](https://img.shields.io/npm/v/vue-native-websocket.svg?style=flat)](https://www.npmjs.com/package/vue-native-websocket)
 
-native websocket implementation for Vuejs 2 and Vuex
+native websocket implementation for Vuejs 3 and Vuex4
 
 ## Install
 
@@ -20,40 +20,40 @@ Automatic socket connection from an URL string
 
 ``` js
 import VueNativeSock from 'vue-native-websocket'
-Vue.use(VueNativeSock, 'ws://localhost:9090')
+app.use(VueNativeSock, 'ws://localhost:9090')
 ```
 
 Enable Vuex integration, where `'./store'` is your local apps store:
 
 ``` js
 import store from './store'
-Vue.use(VueNativeSock, 'ws://localhost:9090', { store: store })
+app.use(VueNativeSock, 'ws://localhost:9090', { store: store })
 ```
 
 Set sub-protocol, this is optional option and default is empty string.
 
 ``` js
 import VueNativeSock from 'vue-native-websocket'
-Vue.use(VueNativeSock, 'ws://localhost:9090', { protocol: 'my-protocol' })
+app.use(VueNativeSock, 'ws://localhost:9090', { protocol: 'my-protocol' })
 ```
 
 Optionally enable JSON message passing:
 
 ``` js
-Vue.use(VueNativeSock, 'ws://localhost:9090', { format: 'json' })
+app.use(VueNativeSock, 'ws://localhost:9090', { format: 'json' })
 ```
 
 JSON message passing with a store:
 
 ``` js
 import store from './store'
-Vue.use(VueNativeSock, 'ws://localhost:9090', { store: store, format: 'json' })
+app.use(VueNativeSock, 'ws://localhost:9090', { store: store, format: 'json' })
 ```
 
 Enable ws reconnect automatically:
 
 ``` js
-Vue.use(VueNativeSock, 'ws://localhost:9090', {
+app.use(VueNativeSock, 'ws://localhost:9090', {
   reconnection: true, // (Boolean) whether to reconnect automatically (false)
   reconnectionAttempts: 5, // (Number) number of reconnection attempts before giving up (Infinity),
   reconnectionDelay: 3000, // (Number) how long to initially wait before attempting a new (1000)
@@ -63,10 +63,10 @@ Vue.use(VueNativeSock, 'ws://localhost:9090', {
 Manage connection manually:
 
 ``` js
-Vue.use(VueNativeSock, 'ws://localhost:9090', {
+app.use(VueNativeSock, 'ws://localhost:9090', {
   connectManually: true,
 })
-const vm = new Vue()
+const vm = createApp(...)
 // Connect to the websocket target specified in the configuration
 vm.$connect()
 // Connect to an alternative websocket URL and Options e.g.
@@ -78,7 +78,7 @@ vm.$disconnect()
 #### On Vuejs instance usage
 
 ``` js
-var vm = new Vue({
+{
   methods: {
     clickButton: function(val) {
         // $socket is [WebSocket](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket) instance
@@ -87,7 +87,7 @@ var vm = new Vue({
         this.$socket.sendObj({awesome: 'data'})
     }
   }
-})
+}
 ```
 
 #### Dynamic socket event listeners
@@ -132,9 +132,9 @@ Reconect events will commit mutations `SOCKET_RECONNECT` and `SOCKET_RECONNECT_E
 import Vue from 'vue'
 import Vuex from 'vuex'
 
-Vue.use(Vuex);
+app.use(Vuex);
 
-export default new Vuex.Store({
+export default createStore({
   state: {
     socket: {
       isConnected: false,
@@ -196,7 +196,6 @@ export {
 }
 
 // store.js
-import Vue from 'vue'
 import Vuex from 'vuex'
 import {
   SOCKET_ONOPEN,
@@ -207,9 +206,9 @@ import {
   SOCKET_RECONNECT_ERROR
 } from './mutation-types'
 
-Vue.use(Vuex);
+app.use(Vuex);
 
-export default new Vuex.Store({
+export default createStore({
   state: {
     socket: {
       isConnected: false,
@@ -261,7 +260,7 @@ const mutations = {
   SOCKET_RECONNECT_ERROR
 }
 
-Vue.use(VueNativeSock, 'ws://localhost:9090', {
+app.use(VueNativeSock, 'ws://localhost:9090', {
   store: store,
   mutations: mutations
 })
@@ -305,7 +304,7 @@ The original passToStore code is used if no `passToStoreHandler` is configured.
 Here is an example of passing in a custom handler. This has the original passToStore code to give you an example of what you can do:
 
 ``` js
-Vue.use(VueNativeSock, 'ws://localhost:9090', {
+app.use(VueNativeSock, 'ws://localhost:9090', {
   passToStoreHandler: function (eventName, event) {
     if (!eventName.startsWith('SOCKET_')) { return }
     let method = 'commit'
@@ -328,7 +327,7 @@ Vue.use(VueNativeSock, 'ws://localhost:9090', {
 Here is an example of do some preprocessing, then pass the event onto the original handler code:
 
 ``` js
-Vue.use(VueNativeSock, 'ws://localhost:9090', {
+app.use(VueNativeSock, 'ws://localhost:9090', {
   passToStoreHandler: function (eventName, event, next) {
     event.data = event.should_have_been_named_data
     next(eventName, event)

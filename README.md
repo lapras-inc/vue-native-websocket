@@ -95,13 +95,13 @@ vm.$disconnect()
 Create a new listener, for example:
 
 ``` js
-this.$options.sockets.onmessage = (data) => console.log(data)
+this.sockets.onmessage = (data) => console.log(data)
 ```
 
 Remove existing listener
 
 ``` js
-delete this.$options.sockets.onmessage
+delete this.sockets.onmessage
 ```
 
 #### Vuex Store integration
